@@ -68,7 +68,6 @@ module Grack
           pid, i, o, e = POSIX::Spawn.popen4(command, git_env)
           i.write(input)
           i.close
-          ::Process.wait(pid)
           while !o.eof?
             block = o.read(8192) # 8M at a time
             @res.write block     # steam it to the client
