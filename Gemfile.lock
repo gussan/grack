@@ -2,14 +2,24 @@ PATH
   remote: .
   specs:
     gitlab-grack (1.0.1)
+      gitlab-grit (~> 2.5.1)
       rack (~> 1.4.1)
 
 GEM
   remote: https://rubygems.org/
   specs:
+    charlock_holmes (0.6.9.4)
+    diff-lcs (1.2.4)
+    gitlab-grit (2.5.1)
+      charlock_holmes (~> 0.6.9)
+      diff-lcs (~> 1.1)
+      mime-types (~> 1.15)
+      posix-spawn (~> 0.3.6)
     metaclass (0.0.1)
+    mime-types (1.23)
     mocha (0.14.0)
       metaclass (~> 0.0.1)
+    posix-spawn (0.3.6)
     rack (1.4.5)
     rack-test (0.6.2)
       rack (>= 1.0)

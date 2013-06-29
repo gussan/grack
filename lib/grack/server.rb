@@ -2,11 +2,12 @@ require 'zlib'
 require 'rack/request'
 require 'rack/response'
 require 'rack/utils'
+require 'grit'
+require 'posix-spawn'
 require 'time'
 
 module Grack
   class Server
-
     SERVICES = [
       ["POST", 'service_rpc',      "(.*?)/git-upload-pack$",  'upload-pack'],
       ["POST", 'service_rpc',      "(.*?)/git-receive-pack$", 'receive-pack'],
@@ -46,9 +47,8 @@ module Grack
       @dir = get_git_dir(path)
       return render_not_found if !@dir
 
-      Dir.chdir(@dir) do
-        self.method(cmd).call()
-      end
+      @git = Grit::Git.new(@dir)
+      self.method(cmd).call()
     end
 
     # ---------------------------------
@@ -63,14 +63,18 @@ module Grack
       @res.status = 200
       @res["Content-Type"] = "application/x-git-%s-result" % @rpc
       @res.finish do
-        command = git_command("#{@rpc} --stateless-rpc #{@dir}")
-        IO.popen(command, File::RDWR) do |pipe|
-          pipe.write(input)
-          pipe.close_write
-          while !pipe.eof?
-            block = pipe.read(8192) # 8M at a time
-            @res.write block        # steam it to the client
+        begin
+          command = git_command("#{@rpc} --stateless-rpc #{@dir}")
+          pid, i, o, e = POSIX::Spawn.popen4(command, git_env)
+          i.write(input)
+          i.close
+          ::Process.wait(pid)
+          while !o.eof?
+            block = o.read(8192) # 8M at a time
+            @res.write block     # steam it to the client
           end
+        ensure
+          [i, o, e].each{ |io| io.close rescue nil }
         end
       end
     end
@@ -79,8 +83,7 @@ module Grack
       service_name = get_service_type
 
       if has_access(service_name)
-        cmd = git_command("#{service_name} --stateless-rpc --advertise-refs .")
-        refs = `#{cmd}`
+        refs = @git.native(service_name, {stateless_rpc: true, advertise_refs: true}.merge(git_env), ".")
 
         @res = Rack::Response.new
         @res.status = 200
@@ -225,8 +228,7 @@ module Grack
     end
 
     def get_git_config(config_name)
-      cmd = git_command("config #{config_name}")
-      `#{cmd}`.chomp
+      @git.native(:config, git_env, config_name).chomp
     end
 
     def read_body
@@ -238,14 +240,17 @@ module Grack
     end
 
     def update_server_info
-      cmd = git_command("update-server-info")
-      `#{cmd}`
+      @git.native(:update_server_info, git_env)
     end
 
     def git_command(command)
       git_bin = @config[:git_path] || 'git'
       command = "#{git_bin} #{command}"
       command
+    end
+
+    def git_env
+      @git_env ||= {chdir: @dir}
     end
 
     # --------------------------------------
