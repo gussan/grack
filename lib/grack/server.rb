@@ -64,8 +64,7 @@ module Grack
       @res["Content-Type"] = "application/x-git-%s-result" % @rpc
       @res.finish do
         begin
-          command = git_command("#{@rpc} --stateless-rpc #{@dir}")
-          pid, i, o, e = POSIX::Spawn.popen4(command, git_env)
+          pid, i, o, e = POSIX::Spawn.popen4(@config[:git_path] || 'git', @rpc, "--stateless-rpc", @dir, git_env)
           i.write(input)
           i.close
           while !o.eof?
@@ -73,7 +72,7 @@ module Grack
             @res.write block     # steam it to the client
           end
         ensure
-          [i, o, e].each{ |io| io.close rescue nil }
+          [o, e].each{ |io| io.close rescue nil }
         end
       end
     end
