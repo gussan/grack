@@ -73,6 +73,7 @@ module Grack
           end
         ensure
           [o, e].each{ |io| io.close rescue nil }
+          Process::waitpid(pid) if pid
         end
       end
     end
