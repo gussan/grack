@@ -54,7 +54,6 @@ module Grack
     # ---------------------------------
     # actual command handling functions
     # ---------------------------------
-
     def service_rpc
       return render_no_access if !has_access(@rpc, true)
       input = read_body
@@ -63,17 +62,14 @@ module Grack
       @res.status = 200
       @res["Content-Type"] = "application/x-git-%s-result" % @rpc
       @res.finish do
-        begin
-          pid, i, o, e = POSIX::Spawn.popen4(@config[:git_path] || 'git', @rpc, "--stateless-rpc", @dir, git_env)
-          i.write(input)
-          i.close
-          while !o.eof?
-            block = o.read(8192) # 8M at a time
-            @res.write block     # steam it to the client
+        command = git_command("#{@rpc} --stateless-rpc #{@dir}")
+        IO.popen(command, File::RDWR) do |pipe|
+          pipe.write(input)
+          pipe.close_write
+          while !pipe.eof?
+            block = pipe.read(8192) # 8M at a time
+            @res.write block # steam it to the client
           end
-        ensure
-          [o, e].each{ |io| io.close rescue nil }
-          Process::waitpid(pid) if pid
         end
       end
     end
