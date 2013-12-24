@@ -15,7 +15,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = Grack::VERSION
 
-  gem.add_dependency("rack", "~> 1.4.1")
+  gem.add_dependency("rack", "~> 1.5.1")
   gem.add_dependency("gitlab-grit", "~> 2.6")
   gem.add_development_dependency("mocha", "~> 0.11")
 end

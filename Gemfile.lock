@@ -1,9 +1,9 @@
 PATH
   remote: .
   specs:
-    gitlab-grack (1.0.1)
-      gitlab-grit (~> 2.5.1)
-      rack (~> 1.4.1)
+    gitlab-grack (2.0.0.pre)
+      gitlab-grit (~> 2.6)
+      rack (~> 1.5.1)
 
 GEM
   remote: https://rubygems.org/
@@ -20,10 +20,10 @@ GEM
     mocha (0.14.0)
       metaclass (~> 0.0.1)
     posix-spawn (0.3.6)
-    rack (1.4.5)
+    rack (1.5.2)
     rack-test (0.6.2)
       rack (>= 1.0)
-    rake (10.0.4)
+    rake (10.1.0)
 
 PLATFORMS
   ruby
